@@ -151,7 +151,7 @@ GROUP BY promo_group
 ORDER BY count DESC
 ```
 
-{% table data="bookings_by_promo_group" /%}
+{% pie_chart data="bookings_by_promo_group" category="promo_group" value="count" /%}
 
 ---
 
