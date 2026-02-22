@@ -94,8 +94,7 @@ ORDER BY month
 
 ---
 
-## Bookings by promo code
-
+## 
 ```sql bookings_by_promo_code
 SELECT
   CASE
