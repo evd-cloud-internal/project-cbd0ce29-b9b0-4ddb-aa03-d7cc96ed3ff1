@@ -21,19 +21,12 @@ WHERE playbook_id = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
   AND is_deleted = false
 ```
 
-{% big_value data="property_brokers_kpis" value="total_bookings" fmt="num" /%}
-**Total bookings**
-
-{% big_value data="property_brokers_kpis" value="active_bookings" fmt="num" /%}
-**Active**
-
-{% big_value data="property_brokers_kpis" value="completed_bookings" fmt="num" /%}
-**Completed**
-
-{% big_value data="property_brokers_kpis" value="created_this_month" fmt="num" /%}
-**Created this month**
-
----
+{% row %}
+    {% big_value data="property_brokers_kpis" value="total_bookings" title="Total bookings" fmt="num" /%}
+    {% big_value data="property_brokers_kpis" value="active_bookings" title="Active" fmt="num" /%}
+    {% big_value data="property_brokers_kpis" value="completed_bookings" title="Completed" fmt="num" /%}
+    {% big_value data="property_brokers_kpis" value="created_this_month" title="Created this month" fmt="num" /%}
+{% /row %}
 
 ## Bookings by day
 
@@ -101,24 +94,6 @@ ORDER BY month
 
 ---
 
-## Leads over time
-
-```sql leads_over_time
-SELECT
-  date_trunc('day', l."SubmittedAt")::date AS date,
-  COUNT(*) AS lead_count
-FROM "KeplaMetaLeads" l
-JOIN "KeplaBookings" b ON b."Id" = l."BookingId"
-WHERE b."PlaybookId" = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
-  AND b."IsDeleted" = false
-GROUP BY date_trunc('day', l."SubmittedAt")::date
-ORDER BY date
-```
-
-{% bar_chart data="leads_over_time" x="date" y="lead_count" /%}
-
----
-
 ## Bookings by promo code
 
 ```sql bookings_by_promo_code
@@ -138,7 +113,6 @@ SELECT
     WHEN promo_code LIKE '%SILVER%' THEN 'Silver'
     WHEN promo_code LIKE '%BRONZE%' THEN 'Bronze'
     WHEN promo_code LIKE '%ELITE%' THEN 'Elite'
-    WHEN promo_code LIKE '%AUTO-JUST-SOLD%' THEN 'Auto Just Sold'
     ELSE 'Other'
   END AS tier,
   COUNT(*) AS count
@@ -161,7 +135,7 @@ ORDER BY promo_group, count DESC
 
 ```sql bookings_by_tenant
 SELECT
-  substring(tenant_id, 1, 13) AS tenant,
+  tenant_id AS tenant,
   COUNT(*) AS bookings,
   countIf(status = 1) AS active,
   countIf(status = 11) AS completed
@@ -173,13 +147,13 @@ ORDER BY bookings DESC
 LIMIT 20
 ```
 
-{% horizontal_bar_chart data="bookings_by_tenant" x="bookings" y="tenant" y_sort="data" /%}
+{% horizontal_bar_chart data="bookings_by_tenant" x="bookings" y="tenant" /%}
 
 {% table data="bookings_by_tenant" /%}
 
 ---
 
-## Leads by booking (table)
+## Leads by booking
 
 ```sql leads_by_booking
 SELECT
