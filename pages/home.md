@@ -4,6 +4,195 @@ assetId: 2e150e60-f1b1-46d2-b75e-afedb1064443
 type: page
 ---
 
-# Welcome
+# Property Brokers – Booking overview
 
-This is your new project's homepage. Edit this file to get started.
+---
+
+## KPIs
+
+```sql property_brokers_kpis
+SELECT
+  COUNT(*) AS total_bookings,
+  countIf(status = 1) AS active_bookings,
+  countIf(status = 11) AS completed_bookings,
+  countIf(creation_time >= toDate(date_trunc('month', today()))) AS created_this_month
+FROM kepla_bookings
+WHERE playbook_id = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
+  AND is_deleted = false
+```
+
+{% big_value data="property_brokers_kpis" value="total_bookings" fmt="num" /%}
+**Total bookings**
+
+{% big_value data="property_brokers_kpis" value="active_bookings" fmt="num" /%}
+**Active**
+
+{% big_value data="property_brokers_kpis" value="completed_bookings" fmt="num" /%}
+**Completed**
+
+{% big_value data="property_brokers_kpis" value="created_this_month" fmt="num" /%}
+**Created this month**
+
+---
+
+## Bookings by day
+
+```sql bookings_by_day
+SELECT
+  date_trunc('day', creation_time)::date AS date,
+  COUNT(*) AS count
+FROM kepla_bookings
+WHERE playbook_id = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
+  AND is_deleted = false
+GROUP BY date_trunc('day', creation_time)::date
+ORDER BY date
+```
+
+{% bar_chart data="bookings_by_day" x="date" y="count" /%}
+
+---
+
+## Bookings by status
+
+```sql bookings_by_status
+SELECT
+  status,
+  CASE status
+    WHEN 12 THEN 'Draft'
+    WHEN 3 THEN 'Pending Approval'
+    WHEN 14 THEN 'Approved'
+    WHEN 4 THEN 'Creating Resources'
+    WHEN 5 THEN 'Launching Resources'
+    WHEN 1 THEN 'Active'
+    WHEN 11 THEN 'Completed'
+    WHEN 2 THEN 'Failed'
+    WHEN 15 THEN 'Cancelled'
+    WHEN 8 THEN 'Scheduled'
+    ELSE 'Other'
+  END AS status_label,
+  COUNT(*) AS count
+FROM kepla_bookings
+WHERE playbook_id = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
+  AND is_deleted = false
+GROUP BY status
+ORDER BY count DESC
+```
+
+{% bar_chart data="bookings_by_status" x="status_label" y="count" /%}
+
+---
+
+## Bookings per month
+
+```sql bookings_per_month
+SELECT
+  date_trunc('month', creation_time)::date AS month,
+  COUNT(*) AS created,
+  countIf(status = 11) AS completed,
+  countIf(status = 1) AS active
+FROM kepla_bookings
+WHERE playbook_id = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
+  AND is_deleted = false
+GROUP BY date_trunc('month', creation_time)::date
+ORDER BY month
+```
+
+{% line_chart data="bookings_per_month" x="month" y=["created", "completed", "active"] /%}
+
+---
+
+## Leads over time
+
+```sql leads_over_time
+SELECT
+  date_trunc('day', l."SubmittedAt")::date AS date,
+  COUNT(*) AS lead_count
+FROM "KeplaMetaLeads" l
+JOIN "KeplaBookings" b ON b."Id" = l."BookingId"
+WHERE b."PlaybookId" = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
+  AND b."IsDeleted" = false
+GROUP BY date_trunc('day', l."SubmittedAt")::date
+ORDER BY date
+```
+
+{% bar_chart data="leads_over_time" x="date" y="lead_count" /%}
+
+---
+
+## Bookings by promo code
+
+```sql bookings_by_promo_code
+SELECT
+  CASE
+    WHEN promo_code LIKE '%VENDOR_LIFE%' THEN 'Vendor Lifestyle'
+    WHEN promo_code LIKE '%VENDOR_RURA%' THEN 'Vendor Rural'
+    WHEN promo_code LIKE '%VENDOR_COMM%' THEN 'Vendor Commercial'
+    WHEN promo_code LIKE '%VENDOR_EXTEND%' THEN 'Vendor Extended'
+    WHEN promo_code LIKE '%VENDOR%' THEN 'Vendor'
+    WHEN promo_code LIKE '%SOLD%' THEN 'Sold'
+    ELSE 'Other'
+  END AS promo_group,
+  CASE
+    WHEN promo_code LIKE '%PLATINUM%' THEN 'Platinum'
+    WHEN promo_code LIKE '%GOLD%' THEN 'Gold'
+    WHEN promo_code LIKE '%SILVER%' THEN 'Silver'
+    WHEN promo_code LIKE '%BRONZE%' THEN 'Bronze'
+    WHEN promo_code LIKE '%ELITE%' THEN 'Elite'
+    WHEN promo_code LIKE '%AUTO-JUST-SOLD%' THEN 'Auto Just Sold'
+    ELSE 'Other'
+  END AS tier,
+  COUNT(*) AS count
+FROM (
+  SELECT JSONExtractString(playbook_resource_inputs, 'listing', 'propertysuite_item_promo_code') AS promo_code
+  FROM kepla_bookings
+  WHERE playbook_id = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
+    AND is_deleted = false
+) sub
+WHERE promo_code != ''
+GROUP BY promo_group, tier
+ORDER BY promo_group, count DESC
+```
+
+{% bar_chart data="bookings_by_promo_code" x="promo_group" y="count" series="tier" /%}
+
+---
+
+## Most bookings by tenant
+
+```sql bookings_by_tenant
+SELECT
+  substring(tenant_id, 1, 13) AS tenant,
+  COUNT(*) AS bookings,
+  countIf(status = 1) AS active,
+  countIf(status = 11) AS completed
+FROM kepla_bookings
+WHERE playbook_id = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
+  AND is_deleted = false
+GROUP BY tenant_id
+ORDER BY bookings DESC
+LIMIT 20
+```
+
+{% horizontal_bar_chart data="bookings_by_tenant" x="bookings" y="tenant" y_sort="data" /%}
+
+{% table data="bookings_by_tenant" /%}
+
+---
+
+## Leads by booking (table)
+
+```sql leads_by_booking
+SELECT
+  id AS booking_id,
+  display_name,
+  status
+FROM kepla_bookings
+WHERE playbook_id = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
+  AND is_deleted = false
+ORDER BY creation_time DESC
+```
+
+{% table data="leads_by_booking" page_size=20 /%}
+
+---
+
