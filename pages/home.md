@@ -129,6 +129,31 @@ ORDER BY promo_group, count DESC
 
 {% bar_chart data="bookings_by_promo_code" x="promo_group" y="count" series="tier" /%}
 
+```sql bookings_by_promo_group
+SELECT
+  CASE
+    WHEN promo_code LIKE '%VENDOR_LIFE%' THEN 'Vendor Lifestyle'
+    WHEN promo_code LIKE '%VENDOR_RURA%' THEN 'Vendor Rural'
+    WHEN promo_code LIKE '%VENDOR_COMM%' THEN 'Vendor Commercial'
+    WHEN promo_code LIKE '%VENDOR_EXTEND%' THEN 'Vendor Extended'
+    WHEN promo_code LIKE '%VENDOR%' THEN 'Vendor'
+    WHEN promo_code LIKE '%SOLD%' THEN 'Sold'
+    ELSE 'Other'
+  END AS promo_group,
+  COUNT(*) AS count
+FROM (
+  SELECT JSONExtractString(playbook_resource_inputs, 'listing', 'propertysuite_item_promo_code') AS promo_code
+  FROM kepla_bookings
+  WHERE playbook_id = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
+    AND is_deleted = false
+) sub
+WHERE promo_code != ''
+GROUP BY promo_group
+ORDER BY count DESC
+```
+
+{% table data="bookings_by_promo_group" /%}
+
 ---
 
 ## Most bookings by tenant
