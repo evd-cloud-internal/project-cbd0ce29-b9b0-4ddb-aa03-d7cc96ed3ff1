@@ -159,16 +159,15 @@ ORDER BY count DESC
 
 ```sql bookings_by_tenant
 SELECT
-  tenant_id AS tenant,
-  COUNT(*) AS bookings,
-  countIf(status = 1) AS active,
-  countIf(status = 11) AS completed
-FROM kepla_bookings
-WHERE playbook_id = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
-  AND is_deleted = false
-GROUP BY tenant_id
+  COALESCE(a.name, b.tenant_id) AS tenant,
+  COUNT(*) AS bookings
+FROM kepla_bookings b
+LEFT JOIN kepla_accounts a ON b.tenant_id = a.account_tenant_id AND a.is_deleted = false
+WHERE b.playbook_id = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
+  AND b.is_deleted = false
+GROUP BY tenant
 ORDER BY bookings DESC
-LIMIT 20
+LIMIT 100
 ```
 
 {% horizontal_bar_chart data="bookings_by_tenant" x="bookings" y="tenant" /%}
@@ -181,13 +180,28 @@ LIMIT 20
 
 ```sql leads_by_booking
 SELECT
-  id AS booking_id,
-  display_name,
-  status
-FROM kepla_bookings
-WHERE playbook_id = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
-  AND is_deleted = false
-ORDER BY creation_time DESC
+  b.id AS booking_id,
+  b.display_name,
+  CASE b.status
+    WHEN 12 THEN 'Draft'
+    WHEN 3 THEN 'Pending Approval'
+    WHEN 14 THEN 'Approved'
+    WHEN 4 THEN 'Creating Resources'
+    WHEN 5 THEN 'Launching Resources'
+    WHEN 1 THEN 'Active'
+    WHEN 11 THEN 'Completed'
+    WHEN 2 THEN 'Failed'
+    WHEN 15 THEN 'Cancelled'
+    WHEN 8 THEN 'Scheduled'
+    ELSE 'Other'
+  END AS status,
+  COUNT(DISTINCT ml.external_lead_id) AS leads
+FROM kepla_bookings b
+LEFT JOIN kepla_meta_leads ml ON b.id = ml.booking_id
+WHERE b.playbook_id = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
+  AND b.is_deleted = false
+GROUP BY b.id, b.display_name, b.status
+ORDER BY leads DESC, b.display_name
 ```
 
 {% table data="leads_by_booking" page_size=20 /%}
