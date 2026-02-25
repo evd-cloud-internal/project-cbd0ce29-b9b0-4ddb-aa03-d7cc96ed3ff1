@@ -167,16 +167,16 @@ WHERE b.playbook_id = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
   AND b.is_deleted = false
 GROUP BY tenant
 ORDER BY bookings DESC
-LIMIT 100
+LIMIT 50
 ```
-
-{% horizontal_bar_chart data="bookings_by_tenant" x="bookings" y="tenant" /%}
+<!-- 
+{% horizontal_bar_chart data="bookings_by_tenant" x="bookings" y="tenant" /%} -->
 
 {% table data="bookings_by_tenant" /%}
 
 ---
 
-## Leads by booking
+## Leads by booking (not setup yet)
 
 ```sql leads_by_booking
 SELECT
