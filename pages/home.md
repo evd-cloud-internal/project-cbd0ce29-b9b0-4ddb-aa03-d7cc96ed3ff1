@@ -155,7 +155,7 @@ ORDER BY count DESC
 
 ---
 
-## Most bookings by tenant
+## Most bookings by agent
 
 ```sql bookings_by_tenant
 SELECT
