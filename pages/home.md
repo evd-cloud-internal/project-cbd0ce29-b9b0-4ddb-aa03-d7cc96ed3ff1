@@ -176,7 +176,7 @@ LIMIT 50
 
 ---
 
-## Leads by booking (not setup yet)
+<!-- ## Leads by booking (not setup yet)
 
 ```sql leads_by_booking
 SELECT
@@ -206,5 +206,5 @@ ORDER BY leads DESC, b.display_name
 
 {% table data="leads_by_booking" page_size=20 /%}
 
----
+--- -->
 
