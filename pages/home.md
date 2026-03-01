@@ -255,6 +255,66 @@ ORDER BY total_bookings DESC, tenant, bookings DESC
 
 {% table data="bookings_by_tenant" /%}
 
+```sql agent_product_breakdown
+SELECT
+  COALESCE(a.name, b.tenant_id) AS agent,
+  CASE
+    WHEN promo_code = 'AUTO-JUST-SOLD' THEN 'Auto Just Sold'
+    WHEN promo_code LIKE '%VENDOR_LIFE%' THEN 'Vendor Lifestyle'
+    WHEN promo_code LIKE '%VENDOR_RURA%' THEN 'Vendor Rural'
+    WHEN promo_code LIKE '%VENDOR_COMM%' THEN 'Vendor Commercial'
+    WHEN promo_code LIKE '%VENDOR_EXTEND%' THEN 'Vendor Extended'
+    WHEN promo_code LIKE '%VENDOR%' THEN 'Vendor'
+    WHEN promo_code LIKE '%SOLD%' THEN 'Sold'
+    WHEN promo_code = '' THEN 'No Promo Code'
+    ELSE 'Other'
+  END AS product,
+  COUNT(*) AS bookings
+FROM kepla_bookings b
+LEFT JOIN kepla_accounts a ON b.tenant_id = a.account_tenant_id AND a.is_deleted = false
+CROSS JOIN (
+  SELECT JSONExtractString(b2.playbook_resource_inputs, 'listing', 'propertysuite_item_promo_code') AS promo_code,
+         b2.id
+  FROM kepla_bookings b2
+  WHERE b2.playbook_id = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
+    AND b2.is_deleted = false
+) pc
+WHERE b.playbook_id = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
+  AND b.is_deleted = false
+  AND b.id = pc.id
+  AND promo_code != ''
+GROUP BY agent, product
+ORDER BY product, bookings DESC
+```
+
+### Most bookings by Vendor
+
+{% table data="agent_product_breakdown" where="product = 'Vendor'" order="bookings desc" /%}
+
+### Most bookings by Vendor Lifestyle
+
+{% table data="agent_product_breakdown" where="product = 'Vendor Lifestyle'" order="bookings desc" /%}
+
+### Most bookings by Vendor Rural
+
+{% table data="agent_product_breakdown" where="product = 'Vendor Rural'" order="bookings desc" /%}
+
+### Most bookings by Vendor Commercial
+
+{% table data="agent_product_breakdown" where="product = 'Vendor Commercial'" order="bookings desc" /%}
+
+### Most bookings by Vendor Extended
+
+{% table data="agent_product_breakdown" where="product = 'Vendor Extended'" order="bookings desc" /%}
+
+### Most bookings by Sold
+
+{% table data="agent_product_breakdown" where="product = 'Sold'" order="bookings desc" /%}
+
+### Most bookings by Auto Just Sold
+
+{% table data="agent_product_breakdown" where="product = 'Auto Just Sold'" order="bookings desc" /%}
+
 ---
 
 <!-- ## Leads by booking (not setup yet)
