@@ -25,23 +25,23 @@ WHERE playbook_id = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
     {% big_value data="property_brokers_kpis" value="total_bookings" title="Total bookings" fmt="num" /%}
     {% big_value data="property_brokers_kpis" value="active_bookings" title="Active" fmt="num" /%}
     {% big_value data="property_brokers_kpis" value="completed_bookings" title="Completed" fmt="num" /%}
-    {% big_value data="property_brokers_kpis" value="created_this_month" title="Created this month" fmt="num" /%}
+    <!-- {% big_value data="property_brokers_kpis" value="created_this_month" title="Created this month" fmt="num" /%} -->
 {% /row %}
 
-## Bookings by day
+## Bookings by week
 
-```sql bookings_by_day
+```sql bookings_by_week
 SELECT
-  date_trunc('day', creation_time)::date AS date,
-  COUNT(*) AS count
+  date_trunc('week', creation_time)::date AS week,
+  COUNT(*) AS bookings
 FROM kepla_bookings
 WHERE playbook_id = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
   AND is_deleted = false
-GROUP BY date_trunc('day', creation_time)::date
-ORDER BY date
+GROUP BY week
+ORDER BY week
 ```
 
-{% bar_chart data="bookings_by_day" x="date" y="count" /%}
+{% bar_chart data="bookings_by_week" x="week" y="bookings" /%}
 
 ---
 
