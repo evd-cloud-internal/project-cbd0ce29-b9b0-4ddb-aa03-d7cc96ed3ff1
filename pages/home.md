@@ -197,8 +197,61 @@ GROUP BY tenant
 ORDER BY bookings DESC
 LIMIT 50
 ```
-<!-- 
-{% horizontal_bar_chart data="bookings_by_tenant" x="bookings" y="tenant" /%} -->
+
+```sql bookings_by_tenant_product
+SELECT tenant, product, bookings, total_bookings
+FROM (
+  SELECT
+    COALESCE(a.name, b.tenant_id) AS tenant,
+    CASE
+      WHEN promo_code = 'AUTO-JUST-SOLD' THEN 'Auto Just Sold'
+      WHEN promo_code LIKE '%VENDOR_LIFE%' THEN 'Vendor Lifestyle'
+      WHEN promo_code LIKE '%VENDOR_RURA%' THEN 'Vendor Rural'
+      WHEN promo_code LIKE '%VENDOR_COMM%' THEN 'Vendor Commercial'
+      WHEN promo_code LIKE '%VENDOR_EXTEND%' THEN 'Vendor Extended'
+      WHEN promo_code LIKE '%VENDOR%' THEN 'Vendor'
+      WHEN promo_code LIKE '%SOLD%' THEN 'Sold'
+      WHEN promo_code = '' THEN 'No Promo Code'
+      ELSE 'Other'
+    END AS product,
+    COUNT(*) AS bookings,
+    SUM(COUNT(*)) OVER (PARTITION BY COALESCE(a.name, b.tenant_id)) AS total_bookings
+  FROM kepla_bookings b
+  LEFT JOIN kepla_accounts a ON b.tenant_id = a.account_tenant_id AND a.is_deleted = false
+  CROSS JOIN (
+    SELECT JSONExtractString(b2.playbook_resource_inputs, 'listing', 'propertysuite_item_promo_code') AS promo_code,
+           b2.id
+    FROM kepla_bookings b2
+    WHERE b2.playbook_id = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
+      AND b2.is_deleted = false
+  ) pc
+  WHERE b.playbook_id = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
+    AND b.is_deleted = false
+    AND b.id = pc.id
+  GROUP BY tenant, product
+  HAVING tenant IN (
+    SELECT COALESCE(a2.name, b2.tenant_id)
+    FROM kepla_bookings b2
+    LEFT JOIN kepla_accounts a2 ON b2.tenant_id = a2.account_tenant_id AND a2.is_deleted = false
+    WHERE b2.playbook_id = '3769b0e1-fa6e-4a23-8d38-c04263eaf361'
+      AND b2.is_deleted = false
+    GROUP BY COALESCE(a2.name, b2.tenant_id)
+    ORDER BY COUNT(*) DESC
+    LIMIT 25
+  )
+) sub
+ORDER BY total_bookings DESC, tenant, bookings DESC
+```
+
+{% horizontal_bar_chart
+    data="bookings_by_tenant_product"
+    x="bookings"
+    y="tenant"
+    series="product"
+    title="Top 25 agents – product breakdown"
+    order="total_bookings desc"
+    height=600
+/%}
 
 {% table data="bookings_by_tenant" /%}
 
