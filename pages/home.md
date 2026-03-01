@@ -94,10 +94,12 @@ ORDER BY month
 
 ---
 
-## 
+## Bookings by promo code
+
 ```sql bookings_by_promo_code
 SELECT
   CASE
+    WHEN promo_code = 'AUTO-JUST-SOLD' THEN 'Auto Just Sold'
     WHEN promo_code LIKE '%VENDOR_LIFE%' THEN 'Vendor Lifestyle'
     WHEN promo_code LIKE '%VENDOR_RURA%' THEN 'Vendor Rural'
     WHEN promo_code LIKE '%VENDOR_COMM%' THEN 'Vendor Commercial'
@@ -105,8 +107,9 @@ SELECT
     WHEN promo_code LIKE '%VENDOR%' THEN 'Vendor'
     WHEN promo_code LIKE '%SOLD%' THEN 'Sold'
     ELSE 'Other'
-  END AS promo_group,
+  END AS product,
   CASE
+    WHEN promo_code = 'AUTO-JUST-SOLD' THEN 'N/A'
     WHEN promo_code LIKE '%PLATINUM%' THEN 'Platinum'
     WHEN promo_code LIKE '%GOLD%' THEN 'Gold'
     WHEN promo_code LIKE '%SILVER%' THEN 'Silver'
@@ -122,15 +125,34 @@ FROM (
     AND is_deleted = false
 ) sub
 WHERE promo_code != ''
-GROUP BY promo_group, tier
-ORDER BY promo_group, count DESC
+GROUP BY product, tier
+ORDER BY count DESC
 ```
 
-{% bar_chart data="bookings_by_promo_code" x="promo_group" y="count" series="tier" /%}
+{% bar_chart
+    data="bookings_by_promo_code"
+    x="product"
+    y="count"
+    series="tier"
+    title="Product × Tier breakdown"
+    series_order=["Platinum", "Gold", "Silver", "Bronze", "Elite", "N/A"]
+    order="count desc"
+    chart_options={
+        series_colors={
+            "Platinum"="#6366f1"
+            "Gold"="#eab308"
+            "Silver"="#94a3b8"
+            "Bronze"="#d97706"
+            "Elite"="#ec4899"
+            "N/A"="#a3a3a3"
+        }
+    }
+/%}
 
-```sql bookings_by_promo_group
+```sql bookings_by_product
 SELECT
   CASE
+    WHEN promo_code = 'AUTO-JUST-SOLD' THEN 'Auto Just Sold'
     WHEN promo_code LIKE '%VENDOR_LIFE%' THEN 'Vendor Lifestyle'
     WHEN promo_code LIKE '%VENDOR_RURA%' THEN 'Vendor Rural'
     WHEN promo_code LIKE '%VENDOR_COMM%' THEN 'Vendor Commercial'
@@ -138,7 +160,7 @@ SELECT
     WHEN promo_code LIKE '%VENDOR%' THEN 'Vendor'
     WHEN promo_code LIKE '%SOLD%' THEN 'Sold'
     ELSE 'Other'
-  END AS promo_group,
+  END AS product,
   COUNT(*) AS count
 FROM (
   SELECT JSONExtractString(playbook_resource_inputs, 'listing', 'propertysuite_item_promo_code') AS promo_code
@@ -147,11 +169,17 @@ FROM (
     AND is_deleted = false
 ) sub
 WHERE promo_code != ''
-GROUP BY promo_group
+GROUP BY product
 ORDER BY count DESC
 ```
 
-{% pie_chart data="bookings_by_promo_group" category="promo_group" value="count" /%}
+{% bar_chart
+    data="bookings_by_product"
+    x="product"
+    y="count"
+    title="Total bookings by product"
+    order="count desc"
+/%}
 
 ---
 
